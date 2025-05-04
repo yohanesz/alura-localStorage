@@ -7,8 +7,9 @@ const descriptionTaskParagraph = document.querySelector('.app__section-active-ta
 
 
 
-const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 let selectedTask = null;
+let liSelectedTask = null;
 
 function updateTask() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -22,9 +23,9 @@ cancelForm.addEventListener('click', () => {
 
 function createTaskElement(task) {
     const li = document.createElement('li');
-    li.classList.add('app__section-task-list-item'); 
+    li.classList.add('app__section-task-list-item');
 
-    const svg = document.createElement('div'); 
+    const svg = document.createElement('div');
     svg.innerHTML = `
     <svg class="app__section-task-icon-status" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="12" cy="12" r="12" fill="#FFF"></circle>
@@ -42,7 +43,7 @@ function createTaskElement(task) {
     button.onclick = () => {
         const newDescription = prompt("Qual é o novo nome da tarefa?");
 
-        if(newDescription) {
+        if (newDescription) {
             task.description = newDescription;
             paragraph.textContent = newDescription;
             updateTask();
@@ -50,30 +51,37 @@ function createTaskElement(task) {
 
     }
 
-    const buttonImg = document.createElement('img'); 
-    buttonImg.setAttribute('src', '/imagens/edit.png'); 
-    button.appendChild(buttonImg); 
+    const buttonImg = document.createElement('img');
+    buttonImg.setAttribute('src', '/imagens/edit.png');
+    button.appendChild(buttonImg);
 
     li.append(svg);
     li.append(paragraph);
     li.append(button);
 
-    li.onclick = () => {
-        document.querySelectorAll('.app__section-task-list-item-active').forEach(e => {
+    if (task.completa) {
+        li.classList.add('app__section-task-list-item-complete');
+        button.setAttribute('disabled', 'disabled');
+    } else {
+        li.onclick = () => {
+            document.querySelectorAll('.app__section-task-list-item-active').forEach(e => {
                 e.classList.remove('app__section-task-list-item-active');
             })
 
-        if(selectedTask == task) {
-            descriptionTaskParagraph.textContent = '';
-            selectedTask = null;
-            return;
-        }
+            if (selectedTask == task) {
+                descriptionTaskParagraph.textContent = '';
+                selectedTask = null;
+                return;
+            }
 
-        selectedTask = task;
-        descriptionTaskParagraph.textContent = task.description;
+            selectedTask = task;
+            liSelectedTask = li;
+            descriptionTaskParagraph.textContent = task.description;
 
-        li.classList.add('app__section-task-list-item-active');
-    };
+            li.classList.add('app__section-task-list-item-active');
+        };
+    }
+
 
     return li;
 }
@@ -89,7 +97,7 @@ formAddTask.addEventListener('submit', (event) => {
     };
 
     tasks.push(task);
-    const taskElement = createTaskElement(task); 
+    const taskElement = createTaskElement(task);
     taskList.append(taskElement);
     updateTask();
     inputTextArea.value = '';
@@ -100,3 +108,30 @@ tasks.forEach((task) => {
     const element = createTaskElement(task);
     taskList.append(element);
 });
+
+document.addEventListener('focoFinalizado', () => {
+    if (selectedTask && liSelectedTask) {
+        liSelectedTask.classList.remove('app__section-task-list-item-active');
+        liSelectedTask.classList.add('app__section-task-list-item-complete');
+        liSelectedTask.querySelector('button').setAttribute('disabled', 'disabled');
+        selectedTask.completa = true;
+        updateTask();
+    }
+});
+
+const btnRemoverConcluidas = document.querySelector("#btn-remover-concluidas")
+const btnRemoverTodas = document.querySelector('#btn-remover-todas')
+
+const removerTarefas = (somenteCompletas) => {
+    const seletor = somenteCompletas ? ".app__section-task-list-item-complete" : ".app__section-task-list-item";
+    document.querySelectorAll(seletor).forEach(e => {
+        e.remove();
+    });
+    tasks = somenteCompletas ? tasks.filter(e => !e.completa) : [];
+    updateTask();
+};
+
+btnRemoverConcluidas.onclick = () => removerTarefas(true);
+btnRemoverTodas.onclick = () => removerTarefas();
+
+
