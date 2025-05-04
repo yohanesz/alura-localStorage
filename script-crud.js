@@ -2,8 +2,23 @@ const btnAddTask = document.querySelector('.app__button--add-task');
 const formAddTask = document.querySelector('.app__form-add-task');
 const inputTextArea = document.querySelector('.app__form-textarea');
 const taskList = document.querySelector('.app__section-task-list');
+const cancelForm = document.querySelector('.app__form-footer__button--cancel');
+const descriptionTaskParagraph = document.querySelector('.app__section-active-task-description');
+
+
 
 const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+let selectedTask = null;
+
+function updateTask() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+};
+
+cancelForm.addEventListener('click', () => {
+    inputTextArea.value = '';
+    formAddTask.classList.add('hidden');
+})
+
 
 function createTaskElement(task) {
     const li = document.createElement('li');
@@ -26,7 +41,13 @@ function createTaskElement(task) {
 
     button.onclick = () => {
         const newDescription = prompt("Qual é o novo nome da tarefa?");
-        paragraph.textContent = newDescription;
+
+        if(newDescription) {
+            task.description = newDescription;
+            paragraph.textContent = newDescription;
+            updateTask();
+        }
+
     }
 
     const buttonImg = document.createElement('img'); 
@@ -36,6 +57,23 @@ function createTaskElement(task) {
     li.append(svg);
     li.append(paragraph);
     li.append(button);
+
+    li.onclick = () => {
+        document.querySelectorAll('.app__section-task-list-item-active').forEach(e => {
+                e.classList.remove('app__section-task-list-item-active');
+            })
+
+        if(selectedTask == task) {
+            descriptionTaskParagraph.textContent = '';
+            selectedTask = null;
+            return;
+        }
+
+        selectedTask = task;
+        descriptionTaskParagraph.textContent = task.description;
+
+        li.classList.add('app__section-task-list-item-active');
+    };
 
     return li;
 }
@@ -53,7 +91,7 @@ formAddTask.addEventListener('submit', (event) => {
     tasks.push(task);
     const taskElement = createTaskElement(task); 
     taskList.append(taskElement);
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    updateTask();
     inputTextArea.value = '';
     formAddTask.classList.add('hidden');
 });
